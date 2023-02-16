@@ -1,6 +1,4 @@
 #include "mainwindow.h"
-#include "orthogonal/orthogonal_dialog.h"
-#include "orthogonal/orthogonal_widget.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -15,15 +13,19 @@ MainWindow::MainWindow(QWidget *parent)
     edit_menu = menuBar()->addMenu(tr("Edit"));
     orthogonal_action = edit_menu->addAction(tr("Orthogonal experimental design"));
     uniform_action = edit_menu->addAction(tr("Uniform experimental design"));
-
     connect(orthogonal_action, &QAction::triggered, this, &MainWindow::New_Orthogonal_Dialog);
-    //  set TabWidget
+
+    analysis_menu = new QMenu;
+    analysis_menu = menuBar()->addMenu(tr("Analysis"));
+    ANOVA_action = analysis_menu->addAction(tr("Analysis of variance"));
+
+    //  Set TabWidget
     tab_widget = new QTabWidget;
     tab_widget->setTabShape(QTabWidget::Triangular);
     tab_widget->setTabPosition(QTabWidget::North);
     setCentralWidget(tab_widget);
 
-    //  close TabWidget
+    //  Close TabWidget
     connect(tab_widget, &QTabWidget::tabCloseRequested,this,&MainWindow::Close_TabWidget);
 
     tab_widget->setTabsClosable(true);
@@ -32,10 +34,6 @@ MainWindow::MainWindow(QWidget *parent)
     int cur = tab_widget->addTab(orthogonal_widget, QString::asprintf("Experiment %d",++TabWidget_count));
     tab_widget->setCurrentIndex(cur);
     tab_widget->setVisible(true);
-
-    status_bar = new QStatusBar;
-    this->setStatusBar(status_bar);
-    status_bar->showMessage("就绪",5000);
 }
 
 MainWindow::~MainWindow()
@@ -44,7 +42,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::New_Orthogonal_Dialog()
 {
-    Orthogonal_Dialog *orth_dialog = new Orthogonal_Dialog(this);
+    Orthogonal_Dialog* orth_dialog = new Orthogonal_Dialog(this);
     orth_dialog->setAttribute(Qt::WA_DeleteOnClose);
     connect(orth_dialog, &Orthogonal_Dialog::Send_Messages, this, &MainWindow::New_Orthogonal_Widget);
     orth_dialog->exec();
@@ -52,7 +50,9 @@ void MainWindow::New_Orthogonal_Dialog()
 
 void MainWindow::New_Orthogonal_Widget(int factors ,int levels)
 {
-    orthogonal_widget = new Orthogonal_Widget(factors,levels);
+    Orthogonal_Widget* orthogonal_widget = new Orthogonal_Widget(factors,levels);
+    //  Trigger command to analysis data
+    connect(ANOVA_action, &QAction::triggered, orthogonal_widget,&Orthogonal_Widget::Set_Result_Widget);
     tab_widget->setTabsClosable(true);
     if(tab_widget->count() == 0)
         TabWidget_count = 0;
@@ -67,3 +67,4 @@ void MainWindow::Close_TabWidget(int index)
         tab_widget->setVisible(false);
     tab_widget->removeTab(index);
 }
+
