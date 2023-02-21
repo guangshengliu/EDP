@@ -6,6 +6,9 @@
 #include <QHBoxLayout>
 #include <QSplitter>
 #include <QMessageBox>
+#include <QChartView>
+#include <QScatterSeries>
+#include "orthogonal_result.h"
 
 class Orthogonal_Widget : public QWidget
 {
@@ -19,6 +22,10 @@ public:
     void Select_Orth_Table(int factors ,int levels);
 
     void Set_Result_Widget();
+    QVector<int> info_table;
+    void Keep_TableWidget_Info(QVector<int> &info_table ,int levels);
+
+    void Draw_Line_Series(QVector<double> result);
 
 private slots:
     void TableWidget_itemDoubleClicked(QTableWidgetItem *item);
@@ -28,10 +35,11 @@ private:
     QString old_text;
 
     QTableWidget *table_widget;
-    QWidget *reslut_widget;
+    Orthogonal_Result *result_widget;
 
     QHBoxLayout *h_layout;
     QSplitter *h_splitter;
+
 };
 
 #endif // ORTHOGONAL_WIDGET_H

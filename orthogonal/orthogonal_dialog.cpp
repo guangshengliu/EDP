@@ -8,10 +8,10 @@ Orthogonal_Dialog::Orthogonal_Dialog(QWidget *parent)
 
     factors = new QComboBox;
     levels = new QComboBox;
-    for (int var = 2; var < 12; ++var)
+    for (int var = 4; var < 12; ++var)
         factors->addItem(QString::number(var));
 
-    for (int var = 2; var < 6; ++var)
+    for (int var = 3; var < 6; ++var)
         levels->addItem(QString::number(var));
 
     confirm = new QPushButton("confirm");
