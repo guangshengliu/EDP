@@ -57,28 +57,16 @@ void Data_Standardization(QVector<QVector<double>> &data, QTableWidget *table_wi
             data[i][j] = data[i][j]/max_rownum[j];
 }
 
-// Range analysis
-void Range_analysis(QVector<double> &result, QTableWidget *table_widget, QVector<int> info_table)
+// Calculate same factor and different level sum
+void Calculate_K(QVector<QVector<double>> &K_range, QTableWidget *table_widget, QVector<int> info_table)
 {
     int row = table_widget->rowCount();
     int column = table_widget->columnCount();
+    int levels = info_table[1];
 
     QVector<QVector<int>> tabel_template(info_table[2],QVector<int>(info_table[3]));
     Get_info_table(tabel_template,info_table);
-    //if(tabel_template.size() != row || tabel_template[0].size() != column)
-        //return;
-    int levels = info_table[1];
-    double K_range[levels][column-1];
-    double average_range[levels][column-1];
-    for (int i = 0; i < levels; ++i) {
-        for (int j = 0; j < column-1; ++j) {
-            K_range[levels][column-1] = 0;
-            average_range[levels][column-1] = 0;
-        }
-    }
 
-    QVector<QVector<double>> data(row , QVector<double>(column-1));
-    Data_Standardization(data,table_widget);
     for (int j = 0; j < column-1; ++j) {
         int num =1;
         while (num <= levels) {
@@ -89,6 +77,22 @@ void Range_analysis(QVector<double> &result, QTableWidget *table_widget, QVector
             ++num;
         }
     }
+}
+
+// Range analysis
+void Range_analysis(QVector<double> &result, QTableWidget *table_widget, QVector<int> info_table)
+{
+    int row = table_widget->rowCount();
+    int column = table_widget->columnCount();
+    int levels = info_table[1];
+
+    QVector<QVector<double>> K_range(levels,QVector<double>(column-1));
+    for (int i = 0; i < levels; ++i)
+        for (int j = 0; j < column-1; ++j)
+            K_range[i][j] = 0;
+
+    Calculate_K(K_range,table_widget,info_table);
+
     //  return range
     QVector<double> sort;
     for (int j = 0; j < column-1; ++j) {
@@ -97,36 +101,68 @@ void Range_analysis(QVector<double> &result, QTableWidget *table_widget, QVector
         auto max = std::max_element(sort.begin(), sort.end());
         auto min = std::min_element(sort.begin(), sort.end());
         double range = *max - *min;
+        // Keep 2 decimal places
+        QString range_str2 = QString::number(range,'f',2);
+        range = range_str2.toDouble();
         result.push_back(range);
         sort.clear();
     }
-    // Inser row for range result
-    table_widget->insertRow(row);
-    for (int var = 0; var < result.size(); ++var) {
-        table_widget->setItem(row,var,new QTableWidgetItem(QString::number(result[var],'f', 2)));
-        table_widget->item(row,var)->setTextAlignment(Qt::AlignHCenter|Qt::AlignVCenter);
-    }
-    auto max = std::max_element(result.begin(), result.end());
-    QString res = QString::asprintf("Main is Factor %lld",max - result.begin() + 1);
-    table_widget->setItem(row,result.size(),new QTableWidgetItem(res));
-    table_widget->item(row,result.size())->setTextAlignment(Qt::AlignHCenter|Qt::AlignVCenter);
 }
 
-//  Analysis of variance
-void ANOVA(QVector<double> &result, QTableWidget *table_widget)
+/*  Analysis of variance
+ *  sum of squares,SS
+ *  sum of squares for total,SST
+ *  sum of squares for factorA,SSA
+ *  sum of squares for error,SSE
+ *
+*/
+void ANOVA(QVector<double> &result, QTableWidget *table_widget, QVector<int> info_table)
 {
     int row = table_widget->rowCount();
     int column = table_widget->columnCount();
-    double sum = 0;
-    QVector<QVector<double>> data(row , QVector<double>(column-1));
-    Data_Standardization(data,table_widget);
-    for (int i = 0; i < row; ++i) {
-        for (int j = 0; j < column-1; ++j) {
-            // Get Data form table_widget
-            sum += data[i][j];
+    int factors = column-1;
+    int levels = info_table[1];
+
+    int df_T = row*column - 1;
+
+    QVector<QVector<double>> K_range(levels,QVector<double>(factors));
+    for (int i = 0; i < levels; ++i)
+        for (int j = 0; j < factors; ++j)
+            K_range[i][j] = 0.0;
+
+    Calculate_K(K_range,table_widget,info_table);
+
+    double T = 0.0;
+    double QT = 0.0;
+    for (int var = 0; var < row; ++var) {
+        T += table_widget->item(var,factors)->text().toDouble();
+        QT += qPow(table_widget->item(var,factors)->text().toDouble(),2);
+    }
+    double CT = qPow(T,2)/row;
+    double SSA[factors];
+    // SSA and Average of SSA
+    double AV_SSA[factors];
+    for (int j = 0; j < factors; ++j){
+        double SSum = 0.0;
+        for (int i = 0; i < levels; ++i){
+            SSum += qPow(K_range[i][j],2);
+        }
+        SSA[j] = SSum/levels - CT;
+        result.push_back(SSA[j]);
+        AV_SSA[j] = SSA[j]/(levels - 1);
+        result.push_back(AV_SSA[j]);
+    }
+    // F-Value
+    for (int j = 0; j < factors; ++j){
+        if(AV_SSA[j] >= AV_SSA[factors-1])
+        {
+            double cal = AV_SSA[j]/AV_SSA[factors-1];
+            result.push_back(cal);
+        }
+        else {
+            result.push_back(0);
         }
     }
-    result.push_back(sum);
 }
 
 //  Judge whether the string is numeric

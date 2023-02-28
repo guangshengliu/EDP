@@ -13,20 +13,17 @@ Orthogonal_Widget::Orthogonal_Widget(int factors ,int levels, QWidget *parent)
     // Left is tablewidget,right is reslutwidget
     QSplitter *h_splitter = new QSplitter(this);
     h_splitter->setStyleSheet("QSplitter:handle{background-color:grey}");
-    result_widget = new Orthogonal_Result;
+    result_widget = new Orthogonal_Result(factors,levels);
+    result_widget->hide();
     h_splitter->addWidget(table_widget);
     h_splitter->addWidget(result_widget);
-    // left:right = 3:1
-    h_splitter->setStretchFactor(0,3);
+    // left:right = 1:1
+    h_splitter->setStretchFactor(0,1);
     h_splitter->setStretchFactor(1,1);
 
     h_layout->addWidget(h_splitter);
     Select_Orth_Table(factors,levels);
-
     Keep_TableWidget_Info(info_table,levels);
-    /*for (int var = 0; var < info_table.size(); ++var) {
-        qDebug()<<info_table[var]<<" ";
-    }*/
 
     QList<QString> title;
     for (int var = 1; var < factors + 1; ++var)
@@ -124,25 +121,36 @@ void Orthogonal_Widget::Keep_TableWidget_Info(QVector<int> &info_table ,int leve
     }
 }
 
-void Orthogonal_Widget::Draw_Line_Series(QVector<double> result)
+// Draw scatterSeries for range anysisc
+void Orthogonal_Widget::Draw_Scatter_Series(QVector<double> result)
 {
-    QScatterSeries *scatterSeries=new QScatterSeries();
+    QScatterSeries *scatterSeries = new QScatterSeries();
 
     for (int var = 0; var < result.size(); ++var)
         scatterSeries->append(var+1,result[var]);
     scatterSeries->setPointLabelsVisible();
-    scatterSeries->setPointLabelsFormat("(@xPoint,@yPoint)");
+    scatterSeries->setPointLabelsFormat("(Factor:@xPoint,Range:@yPoint)");
     scatterSeries->setPointLabelsClipping(false);
     scatterSeries->setPointLabelsColor(Qt::blue);
+    QValueAxis *x_axis = new QValueAxis();
+    QValueAxis *y_axis = new QValueAxis();
+    x_axis->setRange(0,result.size()+1);
+    x_axis->setTickCount(result.size()+2);
+    // Max element
+    auto max = std::max_element(result.begin(), result.end());
+    y_axis->setRange(0,int(*max)+1);
 
     QChart *chart = new QChart();
     chart->legend()->hide();
     chart->addSeries(scatterSeries);
     chart->setTitle(QStringLiteral("Range analysis values"));
+    chart->addAxis(x_axis, Qt::AlignBottom);
+    chart->addAxis(y_axis, Qt::AlignLeft);
+    chart->resize(400,400);
+    scatterSeries->attachAxis(x_axis);
+    scatterSeries->attachAxis(y_axis);
 
-    //QChartView *chartView = new QChartView(chart,result_widget);
     QChartView *chartView = new QChartView(chart);
-
     chartView->setRenderHint(QPainter::Antialiasing);
     chartView->show();
 }
@@ -154,11 +162,24 @@ void Orthogonal_Widget::Set_Result_Widget()
         QMessageBox::critical(this,tr("critical"),tr("Please ensure that the data has been entered completely!"));
         return ;
     }
+    result_widget->show();
+
     QVector<double> result;
-    //ANOVA(result , table_widget);
-    Range_analysis(result,table_widget,info_table);
-    /*for (int var = 0; var < result.size(); ++var) {
-        qDebug()<<result[var]<<" ";
-    }*/
-    Draw_Line_Series(result);
+    ANOVA(result,table_widget,info_table);
+
+    int factors = table_widget->columnCount() - 1;
+    int levels = info_table[1];
+    double SS_sum = 0;
+    for (int var = 0; var < factors; ++var) {
+        QTextCursor cell_cursor = result_widget->table_1->cellAt(var+1,1).firstCursorPosition();
+        cell_cursor.insertText(QString::number(result[var]));
+        SS_sum += result[var];
+        cell_cursor = result_widget->table_1->cellAt(var+1,2).firstCursorPosition();
+        cell_cursor.insertText(QString::number(levels-1));
+        cell_cursor = result_widget->table_1->cellAt(var+1,3).firstCursorPosition();
+        cell_cursor.insertText(QString::number(result[var+factors]));
+        cell_cursor = result_widget->table_1->cellAt(var+1,4).firstCursorPosition();
+        cell_cursor.insertText(QString::number(result[var+2*factors]));
+    }
+    result_widget->table_1->cellAt(factors+1,1).firstCursorPosition().insertText(QString::number(SS_sum));
 }
