@@ -18,6 +18,7 @@ set(PROJECT_SOURCES
         mainwindow.cpp
         mainwindow.h
         lib/lib.h
+        lib/special_math.h
         orthogonal/orthogonal_dialog.h
         orthogonal/orthogonal_dialog.cpp
         orthogonal/orthogonal_table.h

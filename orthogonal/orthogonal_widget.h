@@ -10,6 +10,7 @@
 #include <QScatterSeries>
 #include <QValueAxis>
 #include <QCategoryAxis>
+#include <QTextDocumentFragment>
 #include "orthogonal_result.h"
 
 class Orthogonal_Widget : public QWidget
@@ -28,6 +29,8 @@ public:
     void Keep_TableWidget_Info(QVector<int> &info_table ,int levels);
 
     void Draw_Scatter_Series(QVector<double> result);
+
+    void Clear_table(QVector<QTextTable*> table);
 
 private slots:
     void TableWidget_itemDoubleClicked(QTableWidgetItem *item);

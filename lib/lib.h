@@ -7,21 +7,22 @@
 #include <QRegularExpression>
 #include <QMessageBox>
 #include <QVector>
+#include <QTextTable>
 
 
-int Get_QScreen_Widget()
+static int Get_QScreen_Widget()
 {
     QRect screenRect = QGuiApplication::primaryScreen()->geometry();
     return screenRect.width();
 }
 
-int Get_QScreen_Height()
+static int Get_QScreen_Height()
 {
     QRect screenRect = QGuiApplication::primaryScreen()->geometry();
     return screenRect.height();
 }
 
-void Get_info_table(QVector<QVector<int>> &info, QVector<int> info_table)
+static void Get_info_table(QVector<QVector<int>> &info, QVector<int> info_table)
 {
     int row = info_table[2];
     int column = info_table[3];
@@ -35,7 +36,7 @@ void Get_info_table(QVector<QVector<int>> &info, QVector<int> info_table)
 }
 
 // Make table_widget data standardization
-void Data_Standardization(QVector<QVector<double>> &data, QTableWidget *table_widget)
+static void Data_Standardization(QVector<QVector<double>> &data, QTableWidget *table_widget)
 {
     int row = table_widget->rowCount();
     int column = table_widget->columnCount();
@@ -58,7 +59,7 @@ void Data_Standardization(QVector<QVector<double>> &data, QTableWidget *table_wi
 }
 
 // Calculate same factor and different level sum
-void Calculate_K(QVector<QVector<double>> &K_range, QTableWidget *table_widget, QVector<int> info_table)
+static void Calculate_K(QVector<QVector<double>> &K_range, QTableWidget *table_widget, QVector<int> info_table)
 {
     int row = table_widget->rowCount();
     int column = table_widget->columnCount();
@@ -80,7 +81,7 @@ void Calculate_K(QVector<QVector<double>> &K_range, QTableWidget *table_widget, 
 }
 
 // Range analysis
-void Range_analysis(QVector<double> &result, QTableWidget *table_widget, QVector<int> info_table)
+static void Range_analysis(QVector<double> &result, QTableWidget *table_widget, QVector<int> info_table)
 {
     int row = table_widget->rowCount();
     int column = table_widget->columnCount();
@@ -92,6 +93,10 @@ void Range_analysis(QVector<double> &result, QTableWidget *table_widget, QVector
             K_range[i][j] = 0;
 
     Calculate_K(K_range,table_widget,info_table);
+    //  return K-Value
+    for (int i = 0; i < levels; ++i)
+        for (int j = 0; j < column-1; ++j)
+            result.push_back(K_range[i][j]);
 
     //  return range
     QVector<double> sort;
@@ -116,7 +121,7 @@ void Range_analysis(QVector<double> &result, QTableWidget *table_widget, QVector
  *  sum of squares for error,SSE
  *
 */
-void ANOVA(QVector<double> &result, QTableWidget *table_widget, QVector<int> info_table)
+static void ANOVA(QVector<double> &result, QTableWidget *table_widget, QVector<int> info_table)
 {
     int row = table_widget->rowCount();
     int column = table_widget->columnCount();
@@ -149,6 +154,9 @@ void ANOVA(QVector<double> &result, QTableWidget *table_widget, QVector<int> inf
         }
         SSA[j] = SSum/levels - CT;
         result.push_back(SSA[j]);
+    }
+    // Average of SSA
+    for (int j = 0; j < factors; ++j) {
         AV_SSA[j] = SSA[j]/(levels - 1);
         result.push_back(AV_SSA[j]);
     }
@@ -166,7 +174,7 @@ void ANOVA(QVector<double> &result, QTableWidget *table_widget, QVector<int> inf
 }
 
 //  Judge whether the string is numeric
-bool Judge_Number(QString str)
+static bool Judge_Number(QString str)
 {
     // Regular matching expression
     QString Pattern("(-?[1-9][0-9]+)|(-?[0-9])|(-?[1-9]\\d+\\.\\d+)|(-?[0-9]\\.\\d+)");
@@ -179,23 +187,20 @@ bool Judge_Number(QString str)
 }
 
 //  Judge whether the QTablewidget is numeric
-bool Judge_QTablewidget(QTableWidget *table_widget)
+static bool Judge_QTablewidget(QTableWidget *table_widget)
 {
     int row = table_widget->rowCount();
     int column = table_widget->columnCount();
     int sum = 0;
     for (int i = 0; i < row; ++i) {
-        for (int j = 0; j < column; ++j) {
-            // Get Data form table_widget
-            QString str = table_widget->item(i,j)->text();
-            if(!str.toDouble() || str.toDouble()<=0)
-                return false;
-        }
+        QString str = table_widget->item(i,column-1)->text();
+        if(!str.toDouble() || str.toDouble()<=0)
+            return false;
     }
     return true;
 }
 
-bool set_test(QTableWidget *table_widget)
+static bool set_test(QTableWidget *table_widget)
 {
     table_widget->setRowCount(9);
     table_widget->setColumnCount(5);
@@ -219,6 +224,22 @@ bool set_test(QTableWidget *table_widget)
     {
         table_widget->setItem(var,4,new QTableWidgetItem(QString::number(num[var])));
         table_widget->item(var,4)->setTextAlignment(Qt::AlignHCenter|Qt::AlignVCenter);
+    }
+    return true;
+}
+
+static bool Remove_table_text(QTextTable *table)
+{
+    int row = table->rows();
+    int column = table->columns();
+    for (int i = 1; i < row; ++i) {
+        for (int j = 1; j < column; ++j) {
+            QTextCursor cell_beg = table->cellAt(i,j).firstCursorPosition();
+            QTextCursor cell_end = table->cellAt(i,j).lastCursorPosition();
+            while (cell_beg != cell_end) {
+                cell_beg.deleteChar();
+            }
+        }
     }
     return true;
 }

@@ -1,6 +1,7 @@
 #include "orthogonal_widget.h"
 #include "orthogonal_table.h"
 #include "../lib/lib.h"
+#include "../lib/special_math.h"
 
 Orthogonal_Widget::Orthogonal_Widget(int factors ,int levels, QWidget *parent)
     :QWidget(parent)
@@ -37,7 +38,7 @@ Orthogonal_Widget::Orthogonal_Widget(int factors ,int levels, QWidget *parent)
         table_widget->setItem(var,factors,new QTableWidgetItem(QString::asprintf("Result %d",var+1)));
         table_widget->item(var,factors)->setTextAlignment(Qt::AlignHCenter|Qt::AlignVCenter);
     }
-    set_test(table_widget);
+    //set_test(table_widget);
     // Limit input as number
     connect(table_widget,&QTableWidget::itemDoubleClicked,this,&Orthogonal_Widget::TableWidget_itemDoubleClicked);
     connect(table_widget,&QTableWidget::itemChanged,this,&Orthogonal_Widget::TableWidget_itemChanged);
@@ -155,6 +156,12 @@ void Orthogonal_Widget::Draw_Scatter_Series(QVector<double> result)
     chartView->show();
 }
 
+void Orthogonal_Widget::Clear_table(QVector<QTextTable*> table)
+{
+    for (int var = 0; var < table.size(); ++var)
+        Remove_table_text(result_widget->table[var]);
+}
+
 void Orthogonal_Widget::Set_Result_Widget()
 {
     if(!Judge_QTablewidget(table_widget))
@@ -162,24 +169,68 @@ void Orthogonal_Widget::Set_Result_Widget()
         QMessageBox::critical(this,tr("critical"),tr("Please ensure that the data has been entered completely!"));
         return ;
     }
-    result_widget->show();
+    int factors = table_widget->columnCount() - 1;
+    int levels = info_table[1];
+
+    QVector<QVector<double>> K_range(levels,QVector<double>(factors));
+    for (int i = 0; i < levels; ++i)
+        for (int j = 0; j < factors; ++j)
+            K_range[i][j] = 0;
+    Calculate_K(K_range,table_widget,info_table);
+    QVector<double> K_result;
+    Range_analysis(K_result,table_widget,info_table);
+
+    //  Must clear table befor write
+    Clear_table(result_widget->table);
+
+    for (int j = 0; j < factors; ++j) {
+        for (int i = 0; i < levels; ++i){
+            //  Levels
+            QTextCursor cell_cursor = result_widget->table[j]->cellAt(i+1,1).firstCursorPosition();
+            cell_cursor.insertText(QString::asprintf("%.2lf",K_result[factors*j+i]));
+            //  Free drg
+            cell_cursor = result_widget->table[j]->cellAt(i+1,2).firstCursorPosition();
+            cell_cursor.insertText(QString::asprintf("%d",levels-1));
+            //  k-value
+            cell_cursor = result_widget->table[j]->cellAt(i+1,3).firstCursorPosition();
+            cell_cursor.insertText(QString::asprintf("%.2lf",K_result[factors*j+i]/(levels-1)));
+        }
+        //  Range
+        QTextCursor cell_cursor = result_widget->table[j]->cellAt(1,4).firstCursorPosition();
+        cell_cursor.insertText(QString::asprintf("%.2lf",K_result[factors*levels+j]));
+    }
 
     QVector<double> result;
     ANOVA(result,table_widget,info_table);
-
-    int factors = table_widget->columnCount() - 1;
-    int levels = info_table[1];
     double SS_sum = 0;
     for (int var = 0; var < factors; ++var) {
-        QTextCursor cell_cursor = result_widget->table_1->cellAt(var+1,1).firstCursorPosition();
-        cell_cursor.insertText(QString::number(result[var]));
+        QTextCursor cell_cursor = result_widget->table[factors]->cellAt(var+1,1).firstCursorPosition();
+        cell_cursor.insertText(QString::asprintf("%.2lf",result[var]));
         SS_sum += result[var];
-        cell_cursor = result_widget->table_1->cellAt(var+1,2).firstCursorPosition();
+        cell_cursor = result_widget->table[factors]->cellAt(var+1,2).firstCursorPosition();
         cell_cursor.insertText(QString::number(levels-1));
-        cell_cursor = result_widget->table_1->cellAt(var+1,3).firstCursorPosition();
-        cell_cursor.insertText(QString::number(result[var+factors]));
-        cell_cursor = result_widget->table_1->cellAt(var+1,4).firstCursorPosition();
-        cell_cursor.insertText(QString::number(result[var+2*factors]));
+        cell_cursor = result_widget->table[factors]->cellAt(var+1,3).firstCursorPosition();
+        cell_cursor.insertText(QString::asprintf("%.2lf",result[var+factors]));
+        cell_cursor = result_widget->table[factors]->cellAt(var+1,4).firstCursorPosition();
+        cell_cursor.insertText(QString::asprintf("%.2lf",result[var+2*factors]));
+        if(result[var+2*factors] >= get_f_value(0.01,levels-1,factors)) {
+            cell_cursor = result_widget->table[factors]->cellAt(var+1,6).firstCursorPosition();
+            cell_cursor.insertText("**");
+        }
+        else if(result[var+2*factors] >= get_f_value(0.05,levels-1,factors)) {
+            cell_cursor = result_widget->table[factors]->cellAt(var+1,6).firstCursorPosition();
+            cell_cursor.insertText("*");
+        }
+        else{
+            cell_cursor = result_widget->table[factors]->cellAt(var+1,6).firstCursorPosition();
+            cell_cursor.insertText("Not-significant");
+        }
     }
-    result_widget->table_1->cellAt(factors+1,1).firstCursorPosition().insertText(QString::number(SS_sum));
+    double f_avalue = get_f_value(0.05,levels-1,factors);
+    result_widget->table[factors]->cellAt(1,5).firstCursorPosition().insertText(QString::asprintf("F0.05(%d,%d)=%.2lf",levels-1,factors,f_avalue));
+    f_avalue = get_f_value(0.01,levels-1,factors);
+    result_widget->table[factors]->cellAt(2,5).firstCursorPosition().insertText(QString::asprintf("F0.01(%d,%d)=%.2lf",levels-1,factors,f_avalue));
+    result_widget->table[factors]->cellAt(factors+1,1).firstCursorPosition().insertText(QString::asprintf("%.2lf",SS_sum));
+
+    result_widget->show();
 }
