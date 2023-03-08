@@ -10,16 +10,16 @@
 
 1. Selection number of factors and levels.Then confirm it.
 
-   ![](picture/orth_1.png)
+   ![](https://github.com/guangshengliu/EDP/picture/orth_1.png)
 
 2. Put the experimental result into the **Result** column.
 
-   ![](picture/orth_2.png)
+   ![](https://github.com/guangshengliu/EDP/picture/picture/orth_2.png)
 
 3. Select  **Analysis** menu,then select **analysis of variance**.
 
-   ![](picture/orth_3.png)
+   ![](https://github.com/guangshengliu/EDP/picture/picture/orth_3.png)
 
 4. Waiting for results.
 
-   ![](picture/orth_4.png)
+   ![](https://github.com/guangshengliu/EDP/picture/picture/orth_4.png)
