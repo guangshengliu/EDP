@@ -36,26 +36,76 @@ static void Get_info_table(QVector<QVector<int>> &info, QVector<int> info_table)
 }
 
 // Make table_widget data standardization
-static void Data_Standardization(QVector<QVector<double>> &data, QTableWidget *table_widget)
+static QVector<QVector<double>> Data_Standardization(QVector<QVector<double>> &data, QTableWidget *table_widget)
 {
     int row = table_widget->rowCount();
     int column = table_widget->columnCount();
-    double max_rownum[column-1];
+    //  Keep average and variance
+    QVector<QVector<double>> data_info(column-1,QVector<double>(2));
+    double average_column[column-1];
+    double variance_column[column-1];
     // Initialization
     for (int j = 0; j < column-1; ++j)
-        max_rownum[j] = -1;
+    {
+        average_column[j] = 0;
+        variance_column[j] = 0;
+    }
     // Get Max number in a column
     for (int j = 0; j < column-1; ++j) {
         for (int i = 0; i < row; ++i) {
             // Get Data form table_widget
             data[i][j] = table_widget->item(i,j)->text().toDouble();
-            if(max_rownum[j] < data[i][j])
-                max_rownum[j] = data[i][j];
+            average_column[j] += data[i][j];
         }
+        average_column[j] = average_column[j]/row;
     }
+    // Variance
+    for (int j = 0; j < column-1; ++j) {
+        for (int i = 0; i < row; ++i) {
+            variance_column[j] += pow(data[i][j] - average_column[j],2);
+        }
+        variance_column[j] = sqrt(variance_column[j]/row);
+    }
+    //  Standardization
     for (int j = 0; j < column-1; ++j)
         for (int i = 0; i < row; ++i)
-            data[i][j] = data[i][j]/max_rownum[j];
+            data[i][j] = (data[i][j] - average_column[j])/variance_column[j];
+    for (int var = 0; var < column-1; ++var) {
+        data_info[var][0] = average_column[var];
+        data_info[var][1] = variance_column[var];
+    }
+    return data_info;
+}
+
+// Make table_widget data normalization
+static QVector<QVector<double>> Data_Normalization(QVector<QVector<double>> &data, QTableWidget *table_widget)
+{
+    int row = table_widget->rowCount();
+    int column = table_widget->columnCount();
+    //  Keep Linear number
+    QVector<QVector<double>> data_info(column-1,QVector<double>(2));
+    // Get Min number in every column
+    for (int j = 0; j < column-1; ++j) {
+        double min = INT32_MAX;
+        double max = -1;
+        for (int i = 0; i < row; ++i) {
+            // Get Data form table_widget
+            data[i][j] = table_widget->item(i,j)->text().toDouble();
+            if(min > data[i][j])
+                min = data[i][j];
+            if(max < data[i][j])
+                max = data[i][j];
+        }
+        data_info[j][0] = min;
+        data_info[j][1] = max;
+    }
+    // Normalization
+    for (int j = 0; j < column-1; ++j) {
+        for (int i = 0; i < row; ++i) {
+            data[i][j] = (data[i][j] - data_info[j][0])/(data_info[j][1] - data_info[j][0]);
+        }
+    }
+    return data_info;
 }
 
 // Calculate same factor and different level sum
@@ -200,7 +250,23 @@ static bool Judge_QTablewidget(QTableWidget *table_widget)
     return true;
 }
 
-static bool set_test(QTableWidget *table_widget)
+//  Judge whether the all QTablewidget is numeric
+static bool Judge_All_QTablewidget(QTableWidget *table_widget)
+{
+    int row = table_widget->rowCount();
+    int column = table_widget->columnCount();
+    int sum = 0;
+    for (int i = 0; i < row; ++i) {
+        for (int j = 0; j < column; ++j) {
+            QString str = table_widget->item(i,j)->text();
+            if(!str.toDouble() || str.toDouble()<=0)
+                return false;
+        }
+    }
+    return true;
+}
+
+static bool set_test_orth(QTableWidget *table_widget)
 {
     table_widget->setRowCount(9);
     table_widget->setColumnCount(5);
@@ -224,6 +290,28 @@ static bool set_test(QTableWidget *table_widget)
     {
         table_widget->setItem(var,4,new QTableWidgetItem(QString::number(num[var])));
         table_widget->item(var,4)->setTextAlignment(Qt::AlignHCenter|Qt::AlignVCenter);
+    }
+    return true;
+}
+
+static bool set_test_unifrom(QTableWidget *table_widget)
+{
+    table_widget->setRowCount(9);
+    table_widget->setColumnCount(3);
+    double result[9][3] = {136.5,200,5.8,
+                      137,240,6.3,
+                      137.5,190,4.9,
+                      138,230,5.4,
+                      138.5,180,4,
+                      139,220,4.5,
+                      139.5,170,3,
+                      140,210,3.6,
+                      140.5,250,4.1};
+    for (int i = 0; i < 9; ++i){
+        for (int j = 0; j < 3; ++j){
+            table_widget->setItem(i,j,new QTableWidgetItem(QString::number(result[i][j])));
+            table_widget->item(i,j)->setTextAlignment(Qt::AlignHCenter|Qt::AlignVCenter);
+        }
     }
     return true;
 }

@@ -1,4 +1,4 @@
-# EDP version 0.0.1
+# version 1.1.1
 
 ### Update content
 
@@ -23,3 +23,11 @@
 4. Waiting for results.
 
    <img src="picture/orth_4.png" alt="image" style="zoom:50%;" />
+
+# version 1.1.2
+
+### Update content
+
+1. Supports uniform experimental design. Automatically select appropriate uniform tables based on the number of factors and levels.
+2. Support experimental data processing. Uniform experiment supports Multiple linear regression which using gradient descent algorithm to achieve.
+3. The next version will support non-linear regression.

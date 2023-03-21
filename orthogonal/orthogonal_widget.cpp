@@ -7,8 +7,8 @@ Orthogonal_Widget::Orthogonal_Widget(int factors ,int levels, QWidget *parent)
     :QWidget(parent)
 {
     setAttribute(Qt::WA_DeleteOnClose);
-    table_widget = new QTableWidget;
-    table_widget->setFrameShape(QFrame::Panel);
+    orthogonal_table = new Experiment_Table;
+    table_widget = orthogonal_table->experiment_table;
 
     QHBoxLayout *h_layout = new QHBoxLayout(this);
     // Left is tablewidget,right is reslutwidget
@@ -39,14 +39,6 @@ Orthogonal_Widget::Orthogonal_Widget(int factors ,int levels, QWidget *parent)
         table_widget->item(var,factors)->setTextAlignment(Qt::AlignHCenter|Qt::AlignVCenter);
     }
     //set_test(table_widget);
-    // Limit input as number
-    connect(table_widget,&QTableWidget::itemDoubleClicked,this,&Orthogonal_Widget::TableWidget_itemDoubleClicked);
-    connect(table_widget,&QTableWidget::itemChanged,this,&Orthogonal_Widget::TableWidget_itemChanged);
-}
-
-Orthogonal_Widget::Orthogonal_Widget(QWidget *parent)
-    :QWidget(parent)
-{
 }
 
 Orthogonal_Widget::~Orthogonal_Widget()
@@ -80,22 +72,6 @@ void Orthogonal_Widget::Select_Orth_Table(int factors ,int levels)
     {
         if(factors <= 6 && factors > 0)
             Orth_Table_6_5(table_widget,factors);
-    }
-}
-
-// Get QTableWidget_item text
-void Orthogonal_Widget::TableWidget_itemDoubleClicked(QTableWidgetItem *item)
-{
-    old_text = item->text();
-}
-
-void Orthogonal_Widget::TableWidget_itemChanged(QTableWidgetItem *item)
-{
-    // If not number or old_text,recover it
-    if(!Judge_Number(item->text()))
-    {
-       QMessageBox::critical(this,tr("critical"),tr("Please express the factor's level in numbers!"));
-       item->setText(old_text);
     }
 }
 

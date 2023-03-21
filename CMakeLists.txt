@@ -17,6 +17,8 @@ set(PROJECT_SOURCES
         main.cpp
         mainwindow.cpp
         mainwindow.h
+        experiment_table.h
+        experiment_table.cpp
         lib/lib.h
         lib/special_math.h
         orthogonal/orthogonal_dialog.h
@@ -26,6 +28,15 @@ set(PROJECT_SOURCES
         orthogonal/orthogonal_widget.cpp
         orthogonal/orthogonal_result.h
         orthogonal/orthogonal_result.cpp
+        uniform/uniform_dialog.h
+        uniform/uniform_dialog.cpp
+        uniform/uniform_table.h
+        uniform/uniform_widget.h
+        uniform/uniform_widget.cpp
+        uniform/uniform_result.h
+        uniform/uniform_result.cpp
+        lib/matrix.h
+        lib/regression_analysis.h
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)

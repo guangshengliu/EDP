@@ -2,7 +2,6 @@
 #define ORTHOGONAL_WIDGET_H
 
 #include <QWidget>
-#include <QTableWidget>
 #include <QHBoxLayout>
 #include <QSplitter>
 #include <QMessageBox>
@@ -12,6 +11,7 @@
 #include <QCategoryAxis>
 #include <QTextDocumentFragment>
 #include "orthogonal_result.h"
+#include "../experiment_table.h"
 
 class Orthogonal_Widget : public QWidget
 {
@@ -19,7 +19,6 @@ class Orthogonal_Widget : public QWidget
 
 public:
     Orthogonal_Widget(int factors ,int levels, QWidget *parent = nullptr);
-    Orthogonal_Widget(QWidget *parent = nullptr);
     ~Orthogonal_Widget();
 
     void Select_Orth_Table(int factors ,int levels);
@@ -32,13 +31,8 @@ public:
 
     void Clear_table(QVector<QTextTable*> table);
 
-private slots:
-    void TableWidget_itemDoubleClicked(QTableWidgetItem *item);
-    void TableWidget_itemChanged(QTableWidgetItem *item);
-
 private:
-    QString old_text;
-
+    Experiment_Table *orthogonal_table;
     QTableWidget *table_widget;
     Orthogonal_Result *result_widget;
 

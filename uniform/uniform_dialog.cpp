@@ -1,6 +1,6 @@
-#include "orthogonal_dialog.h"
+#include "uniform_dialog.h"
 
-Orthogonal_Dialog::Orthogonal_Dialog(QWidget *parent)
+Uniform_Dialog::Uniform_Dialog(QWidget *parent)
     :QDialog(parent)
 {
     QLabel *text1 = new QLabel("factors:");
@@ -8,16 +8,16 @@ Orthogonal_Dialog::Orthogonal_Dialog(QWidget *parent)
 
     factors = new QComboBox;
     levels = new QComboBox;
-    for (int var = 2; var < 7; ++var)
+    for (int var = 2; var < 8; ++var)
         factors->addItem(QString::number(var));
 
-    for (int var = 2; var < 6; ++var)
+    for (int var = 2; var < 12; ++var)
         levels->addItem(QString::number(var));
 
     confirm = new QPushButton("confirm");
     cancel = new QPushButton("cancel");
-    connect(confirm,&QPushButton::clicked,this,&Orthogonal_Dialog::confirm_clicked);
-    connect(cancel,&QPushButton::clicked,this,&Orthogonal_Dialog::close);
+    connect(confirm,&QPushButton::clicked,this,&Uniform_Dialog::confirm_clicked);
+    connect(cancel,&QPushButton::clicked,this,&Uniform_Dialog::close);
 
     gridlayout = new QGridLayout(this);
     gridlayout->setColumnMinimumWidth(0,50);
@@ -36,11 +36,11 @@ Orthogonal_Dialog::Orthogonal_Dialog(QWidget *parent)
     gridlayout->addWidget(cancel,4,6,1,1);
 }
 
-Orthogonal_Dialog::~Orthogonal_Dialog()
+Uniform_Dialog::~Uniform_Dialog()
 {
 }
 
-void Orthogonal_Dialog::confirm_clicked()
+void Uniform_Dialog::confirm_clicked()
 {
     int Factor = factors->currentText().toInt();
     int Level = levels->currentText().toInt();

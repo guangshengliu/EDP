@@ -14,10 +14,14 @@ MainWindow::MainWindow(QWidget *parent)
     orthogonal_action = edit_menu->addAction(tr("Orthogonal experimental design"));
     uniform_action = edit_menu->addAction(tr("Uniform experimental design"));
     connect(orthogonal_action, &QAction::triggered, this, &MainWindow::New_Orthogonal_Dialog);
+    connect(uniform_action, &QAction::triggered, this, &MainWindow::New_Uniform_Dialog);
+
 
     analysis_menu = new QMenu;
     analysis_menu = menuBar()->addMenu(tr("Analysis"));
     ANOVA_action = analysis_menu->addAction(tr("Analysis of variance"));
+    //  Regression analysis
+    Regression_action = analysis_menu->addAction(tr("Regression analysis"));
 
     //  Set TabWidget
     tab_widget = new QTabWidget;
@@ -27,13 +31,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     //  Close TabWidget
     connect(tab_widget, &QTabWidget::tabCloseRequested,this,&MainWindow::Close_TabWidget);
-
-    tab_widget->setTabsClosable(true);
-    if(tab_widget->count() == 0)
-        TabWidget_count = 0;
-    int cur = tab_widget->addTab(orthogonal_widget, QString::asprintf("Experiment %d",++TabWidget_count));
-    tab_widget->setCurrentIndex(cur);
-    tab_widget->setVisible(true);
 }
 
 MainWindow::~MainWindow()
@@ -56,7 +53,7 @@ void MainWindow::New_Orthogonal_Widget(int factors ,int levels)
     tab_widget->setTabsClosable(true);
     if(tab_widget->count() == 0)
         TabWidget_count = 0;
-    int cur = tab_widget->addTab(orthogonal_widget, QString::asprintf("Experiment %d",++TabWidget_count));
+    int cur = tab_widget->addTab(orthogonal_widget, QString::asprintf("Orthogonal Experiment %d",++TabWidget_count));
     tab_widget->setCurrentIndex(cur);
     tab_widget->setVisible(true);
 }
@@ -68,3 +65,23 @@ void MainWindow::Close_TabWidget(int index)
     tab_widget->removeTab(index);
 }
 
+void MainWindow::New_Uniform_Dialog()
+{
+    Uniform_Dialog* uniform_dialog = new Uniform_Dialog(this);
+    uniform_dialog->setAttribute(Qt::WA_DeleteOnClose);
+    connect(uniform_dialog, &Uniform_Dialog::Send_Messages, this, &MainWindow::New_Uniform_Widget);
+    uniform_dialog->exec();
+}
+
+void MainWindow::New_Uniform_Widget(int factors ,int levels)
+{
+    Uniform_Widget* uniform_widget = new Uniform_Widget(factors,levels);
+    //  Trigger command to analysis data
+    connect(Regression_action, &QAction::triggered, uniform_widget,&Uniform_Widget::Set_Result_Widget);
+    tab_widget->setTabsClosable(true);
+    if(tab_widget->count() == 0)
+        TabWidget_count = 0;
+    int cur = tab_widget->addTab(uniform_widget, QString::asprintf("Uniform Experiment %d",++TabWidget_count));
+    tab_widget->setCurrentIndex(cur);
+    tab_widget->setVisible(true);
+}
